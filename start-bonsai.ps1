@@ -47,6 +47,8 @@ try {
     & $launcher `
         --alias bonsai2-27b `
         -np 1 `
+        -t 8 `
+        -tb 8 `
         --chat-template-file $template `
         --image-min-tokens 1024 `
         --cache-ram 4096 `
@@ -56,6 +58,7 @@ try {
 finally {
     Pop-Location
 }
+
 
 
 
