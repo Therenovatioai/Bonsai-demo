@@ -49,6 +49,8 @@ try {
         -np 1 `
         -t 8 `
         -tb 8 `
+        --min-p 0 `
+        --cors-origins localhost `
         --chat-template-file $template `
         --image-min-tokens 1024 `
         --cache-ram 4096 `
