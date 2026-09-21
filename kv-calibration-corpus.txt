@@ -1,0 +1,127 @@
+La inteligencia artificial aplicada al desarrollo de software permite analizar repositorios,
+comprender especificaciones, modificar código, ejecutar pruebas, interpretar resultados y utilizar
+herramientas externas. Un agente debe distinguir hechos observados de inferencias y verificar los
+resultados antes de concluir una tarea.
+
+En una arquitectura multiagente, un orquestador puede delegar tareas a planificadores, ejecutores
+y auditores. Los agentes intercambian información estructurada, trabajan con archivos, comandos,
+APIs y herramientas, y deben mantener contexto suficiente para comprender decisiones anteriores.
+
+El siguiente objeto JSON representa una llamada estructurada a una herramienta:
+{
+  "tool": "search_repository",
+  "arguments": {
+    "query": "authentication middleware",
+    "path": "src"
+  }
+}
+
+Un resultado posible de una herramienta es:
+{
+  "status": "success",
+  "files": [
+    "src/auth/middleware.ts",
+    "src/auth/session.ts"
+  ],
+  "count": 2
+}
+
+TypeScript example:
+
+interface AgentTask {
+  id: string;
+  objective: string;
+  status: "pending" | "running" | "completed" | "failed";
+  tools: string[];
+}
+
+async function executeTask(task: AgentTask): Promise<void> {
+  if (task.status !== "pending") {
+    throw new Error(`Invalid task state: ${task.status}`);
+  }
+
+  task.status = "running";
+
+  try {
+    await runAgent(task);
+    task.status = "completed";
+  } catch (error) {
+    task.status = "failed";
+    throw error;
+  }
+}
+
+PowerShell example:
+
+$process = Get-CimInstance Win32_Process |
+    Where-Object { $_.Name -eq "llama-server.exe" }
+
+if ($process) {
+    Write-Host "Local AI server is running"
+} else {
+    Write-Host "Local AI server is stopped"
+}
+
+Bash example:
+
+set -euo pipefail
+
+if command -v git >/dev/null 2>&1; then
+    git status --short
+    git log -5 --oneline
+fi
+
+A local language model can expose an OpenAI-compatible API. Clients send system messages,
+developer instructions, user prompts, tool definitions and previous conversation messages.
+The server tokenizes the prompt, performs prompt evaluation, stores attention state in the
+KV cache and then generates new tokens autoregressively.
+
+En contextos largos es importante recuperar información precisa que apareció mucho antes en
+la conversación. Un modelo no debe confundir datos similares ni inventar valores ausentes.
+Por ejemplo, si el documento dice que NEEDLE_ALPHA es ORION-7429, la respuesta correcta debe
+preservar exactamente ORION-7429.
+
+Los repositorios de software contienen código fuente, documentación, configuraciones, pruebas,
+esquemas JSON, archivos YAML, Markdown, registros de Git y resultados de benchmarks. Un agente
+de programación necesita navegar entre estos formatos y conservar relaciones entre nombres,
+rutas, funciones, tipos, errores y decisiones arquitectónicas.
+
+When reviewing a software repository, inspect the current implementation before proposing changes.
+Do not assume that documentation and code are synchronized. Check configuration files, runtime
+arguments, tests, logs and version-control history. Prefer reproducible measurements over guesses.
+
+Tool calling example:
+
+User: Find the configuration file and report the current context size.
+
+Assistant tool call:
+{
+  "name": "read_file",
+  "arguments": {
+    "path": "config/runtime.json"
+  }
+}
+
+Tool result:
+{
+  "context_length": 262144,
+  "kv_cache": "q4_0",
+  "flash_attention": true
+}
+
+Assistant:
+The configured context length is 262144 tokens, with Q4_0 KV cache and Flash Attention enabled.
+
+La evaluación semántica requiere comprender equivalencias de significado aunque cambie la redacción.
+"El servidor no responde", "la API está caída" y "no existe respuesta del endpoint" pueden describir
+situaciones relacionadas, pero un sistema debe conservar las diferencias cuando sean importantes.
+
+Un análisis técnico debe incluir mediciones cuando estén disponibles. Por ejemplo:
+prompt processing: 965.82 tokens por segundo
+token generation: 47.58 tokens por segundo
+GPU memory: 15306 MiB
+context window: 262144 tokens
+
+The quick brown fox jumps over the lazy dog. Technical documents frequently mix natural language,
+source code, configuration, tables, identifiers and numerical measurements. Robust retrieval should
+preserve each representation accurately across long contexts.

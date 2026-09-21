@@ -31,7 +31,7 @@ $env:BONSAI_FAMILY = "bonsai2"
 $env:BONSAI_MODEL = "27B"
 $env:BONSAI_CTX = "262144"
 $env:BONSAI_KV4 = "1"
-$env:BONSAI_MMPROJ_CPU = "1"
+$env:BONSAI_MMPROJ_CPU = "0"
 
 Write-Host ""
 Write-Host "Iniciando Bonsai 2 27B" -ForegroundColor Cyan
@@ -47,9 +47,17 @@ try {
     & $launcher `
         --alias bonsai2-27b `
         -np 1 `
-        --chat-template-file $template `r`n        --image-min-tokens 1024
+        --chat-template-file $template `
+        --image-min-tokens 1024 `
+        --cache-ram 4096 `
+        --ctx-checkpoints 32 `
+        --cache-idle-slots
 }
 finally {
     Pop-Location
 }
+
+
+
+
 
