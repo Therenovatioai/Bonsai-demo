@@ -94,13 +94,14 @@ start-bonsai.ps1
 templates/chat_template.jinja
 MODEL-MANIFEST.md
 OPTIMIZATION-RESULTS.md
+REPO-OPERATIONS.md
 kv-calibration-corpus.txt
 results/bonsai2-5060ti-context-curve-10709.csv
 ```
 
 ## Operación del repositorio
 
-Este repositorio usa una estructura de fork deliberada para separar el proyecto oficial de PrismML de la versión local optimizada.
+Este fork usa una sola rama operativa:
 
 ```text
 PrismML-Eng/Bonsai-demo
@@ -112,22 +113,27 @@ PrismML-Eng/Bonsai-demo
 Therenovatioai/Bonsai-demo
         ↑
       origin
-       │
-       ├── main       → espejo limpio de PrismML
-       └── optimized  → versión local optimizada
+        │
+       main
+        │
+        ├── código de PrismML
+        ├── configuración local
+        ├── optimizaciones
+        ├── documentación
+        └── integración con clientes como OpenCode
 ```
 
 Reglas principales:
 
 - `upstream` apunta al repositorio oficial `PrismML-Eng/Bonsai-demo`.
 - `origin` apunta al fork `Therenovatioai/Bonsai-demo`.
-- `main` se mantiene como espejo limpio de `upstream/main`.
-- `optimized` contiene la configuración, documentación y optimizaciones locales.
+- `main` es la única rama operativa permanente.
+- Los cambios oficiales de PrismML se incorporan en `main` mediante merge, no mediante rebase como flujo normal.
 - Los tags `v1.0-stable`, `v1.1-optimized`, etc. son snapshots históricos y no deben moverse.
-- El push hacia `upstream` está deshabilitado localmente para evitar modificaciones accidentales al repositorio oficial.
-- El trabajo normal debe realizarse sobre `optimized`.
+- El push hacia `upstream` está deshabilitado localmente.
+- Las ramas `backup/*` son puntos de recuperación, no ramas de trabajo.
 
-La guía completa de operación, actualización, recuperación y versionado está en:
+La guía completa está en:
 
 ```text
 REPO-OPERATIONS.md
@@ -149,4 +155,3 @@ REPO-OPERATIONS.md
 v1.0-stable      baseline técnico inicial
 v1.1-optimized   runtime optimizado y benchmarkeado
 ```
-

@@ -1,26 +1,20 @@
 # Operación del repositorio — Bonsai 2 27B
 
-Este documento define cómo debe operarse este repositorio por una persona o por un agente de IA.
+Este documento define cómo debe operar este repositorio una persona o un agente de IA.
 
-El objetivo es conservar una separación clara entre:
-
-1. el proyecto oficial de PrismML;
-2. el fork personal;
-3. la rama limpia que refleja upstream;
-4. la rama optimizada de uso real;
-5. los baselines históricos reproducibles.
+El diseño actual usa **una sola rama operativa permanente: `main`**.
 
 ---
 
 ## 1. Arquitectura Git
 
-### Repositorio oficial
+### Proyecto oficial
 
 ```text
 PrismML-Eng/Bonsai-demo
 ```
 
-Se configura localmente como:
+Remoto local:
 
 ```text
 upstream
@@ -33,7 +27,7 @@ fetch: habilitado
 push:  deshabilitado
 ```
 
-No se deben publicar cambios directamente en `upstream`.
+No publicar cambios directamente en `upstream`.
 
 ### Fork personal
 
@@ -41,58 +35,49 @@ No se deben publicar cambios directamente en `upstream`.
 Therenovatioai/Bonsai-demo
 ```
 
-Se configura localmente como:
+Remoto local:
 
 ```text
 origin
 ```
 
-Este es el destino normal de los `push`.
+Este es el destino normal de todos los `push`.
+
+### Diagrama
+
+```text
+PrismML-Eng/Bonsai-demo
+        ↑
+     upstream
+     fetch solamente
+        │
+        │
+Therenovatioai/Bonsai-demo
+        ↑
+      origin
+        │
+       main
+        │
+        ├── código recibido de PrismML
+        ├── configuración local
+        ├── optimizaciones
+        ├── documentación
+        └── integraciones locales
+```
 
 ---
 
-## 2. Ramas
+## 2. Rama operativa
 
-### `main`
-
-`main` debe mantenerse como una copia limpia de:
+La rama permanente de trabajo es:
 
 ```text
-upstream/main
+main
 ```
 
-No se realizan optimizaciones locales directamente sobre `main`.
+No existe una rama `optimized` en el flujo normal.
 
-Su función es:
-
-- representar el estado oficial de PrismML;
-- facilitar la comparación contra upstream;
-- servir como nueva base cuando PrismML publica cambios;
-- permitir rebase limpio de la rama optimizada.
-
-### `optimized`
-
-Es la rama de trabajo real de esta instalación.
-
-Contiene:
-
-- configuración local;
-- `start-bonsai.ps1`;
-- documentación local;
-- KV calibration corpus;
-- benchmarks;
-- ajustes de CUDA/runtime;
-- configuración de threads;
-- prompt cache;
-- integración futura con OpenCode.
-
-El trabajo cotidiano debe realizarse sobre:
-
-```text
-optimized
-```
-
-Comprobar antes de trabajar:
+Antes de trabajar:
 
 ```powershell
 git branch --show-current
@@ -101,14 +86,22 @@ git branch --show-current
 Salida esperada:
 
 ```text
-optimized
+main
 ```
+
+Y:
+
+```powershell
+git status -sb
+```
+
+Debe mostrar un árbol limpio o cambios comprendidos por el operador.
 
 ---
 
 ## 3. Remotos esperados
 
-Comprobar con:
+Comprobar:
 
 ```powershell
 git remote -v
@@ -119,11 +112,6 @@ Estado esperado:
 ```text
 origin    https://github.com/Therenovatioai/Bonsai-demo
 upstream  https://github.com/PrismML-Eng/Bonsai-demo.git
-```
-
-El push de `upstream` debe estar deshabilitado:
-
-```text
 upstream  DISABLED (push)
 ```
 
@@ -135,128 +123,150 @@ git remote get-url upstream
 git remote get-url --push upstream
 ```
 
+El remoto de push por defecto debe ser:
+
+```text
+origin
+```
+
+Comprobar:
+
+```powershell
+git config --get remote.pushDefault
+```
+
 ---
 
 ## 4. Flujo normal de trabajo
 
-Antes de modificar el repo:
+Antes de modificar:
 
 ```powershell
 Set-Location "$HOME\AI\Bonsai-demo"
 
-git switch optimized
+git switch main
 git status -sb
 ```
-
-El árbol de trabajo debe estar limpio antes de una operación importante.
 
 Después de realizar cambios:
 
 ```powershell
 git add <archivos>
 git commit -m "tipo: descripción"
-git push origin optimized
+git push origin main
 ```
 
-No usar `git push upstream`.
+No usar:
+
+```powershell
+git push upstream
+```
+
+El push de `upstream` está deshabilitado deliberadamente.
 
 ---
 
-## 5. Cómo actualizar desde PrismML
+## 5. Cómo incorporar cambios nuevos de PrismML
 
-Cuando PrismML publique cambios nuevos, primero actualizar la rama limpia.
+El flujo normal prioriza **seguridad y baja complejidad**.
 
-### Paso 1 — actualizar referencias oficiales
+No se usa rebase como procedimiento estándar porque reescribe la historia local y obliga a realizar force-push.
+
+### Paso 1 — obtener cambios oficiales
 
 ```powershell
 Set-Location "$HOME\AI\Bonsai-demo"
 
+git switch main
+git status -sb
 git fetch upstream
 ```
 
-### Paso 2 — actualizar `main`
+### Paso 2 — revisar qué cambió
 
 ```powershell
-git switch main
-git merge --ff-only upstream/main
+git log --oneline HEAD..upstream/main
+```
+
+Opcionalmente:
+
+```powershell
+git diff --stat HEAD..upstream/main
+```
+
+### Paso 3 — incorporar upstream
+
+```powershell
+git merge --no-edit upstream/main
+```
+
+Si no hay conflictos, Git incorporará los cambios oficiales manteniendo la historia local.
+
+Si existen conflictos:
+
+1. detenerse;
+2. revisar cada archivo;
+3. conservar deliberadamente las optimizaciones locales cuando sigan siendo válidas;
+4. incorporar cambios upstream compatibles;
+5. completar el merge;
+6. repetir las validaciones del runtime.
+
+No resolver conflictos automáticamente sin revisar su impacto.
+
+### Paso 4 — validar Bonsai
+
+No publicar inmediatamente después del merge.
+
+Primero ejecutar las validaciones descritas en la sección siguiente.
+
+### Paso 5 — publicar
+
+Si las validaciones pasan:
+
+```powershell
 git push origin main
 ```
 
-El `--ff-only` evita crear merges accidentales en `main`.
-
-Después:
-
-```powershell
-git rev-parse main
-git rev-parse upstream/main
-```
-
-Ambos SHA deben coincidir.
-
-### Paso 3 — reaplicar la versión optimizada
-
-```powershell
-git switch optimized
-git rebase main
-```
-
-Si el rebase termina sin conflictos, ejecutar las validaciones necesarias del runtime.
-
-### Paso 4 — publicar la rama optimizada actualizada
-
-Debido a que un rebase reescribe los SHA de los commits:
-
-```powershell
-git push --force-with-lease origin optimized
-```
-
-Usar:
-
-```text
---force-with-lease
-```
-
-y no:
-
-```text
---force
-```
-
-porque `--force-with-lease` protege contra sobrescribir cambios remotos inesperados.
+No se necesita `--force`.
 
 ---
 
-## 6. Qué validar después de actualizar upstream
+## 6. Validación después de una actualización
 
-Una actualización de PrismML no implica automáticamente que el runtime optimizado siga siendo válido.
+Una actualización de PrismML no implica que el baseline optimizado siga siendo válido.
 
-Comprobar como mínimo:
+Arrancar:
 
 ```powershell
 .\start-bonsai.ps1
 ```
 
-Luego:
+Comprobar salud:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8080/health
 ```
 
-Y verificar:
+Consultar propiedades:
 
 ```powershell
 $props = Invoke-RestMethod http://127.0.0.1:8080/props
 
 $props.total_slots
+
 $props.default_generation_settings.params |
     Select-Object temperature, top_k, top_p, min_p
+```
 
+Comprobar proceso real:
+
+```powershell
 Get-CimInstance Win32_Process |
     Where-Object { $_.Name -eq "llama-server.exe" } |
     Select-Object -ExpandProperty CommandLine
 ```
 
-Invariantes actuales esperados:
+Invariantes esperados:
 
 ```text
 context                 262144
@@ -277,11 +287,11 @@ min-p                        0
 CORS                    localhost
 ```
 
-No crear un nuevo tag hasta validar el runtime.
+Si una actualización cambia el runtime, repetir los benchmarks relevantes antes de declarar un nuevo baseline.
 
 ---
 
-## 7. Solicitudes concurrentes
+## 7. Concurrencia y solicitudes de clientes
 
 La configuración estable usa:
 
@@ -289,13 +299,13 @@ La configuración estable usa:
 -np 1
 ```
 
-Esto significa que `llama-server` expone un solo slot de inferencia.
+Esto crea un único slot de inferencia.
 
-Aunque un cliente como OpenCode envíe varias solicitudes simultáneamente:
+Aunque OpenCode u otro cliente envíe varias solicitudes simultáneas:
 
-- solo una puede ocupar el slot;
-- las siguientes esperan;
-- el modelo procesa las solicitudes de forma secuencial.
+- una solicitud ocupa el slot;
+- las demás esperan;
+- el modelo procesa la inferencia de forma secuencial.
 
 Verificar:
 
@@ -323,13 +333,13 @@ Debe existir únicamente:
 id: 0
 ```
 
-No aumentar `-np` sin repetir pruebas de memoria, cache y concurrencia.
+No aumentar `-np` sin repetir pruebas de VRAM, contexto y prompt cache.
 
 ---
 
 ## 8. Tags y baselines
 
-Los tags representan estados históricos reproducibles.
+Los tags publicados son snapshots históricos.
 
 Actualmente:
 
@@ -342,22 +352,14 @@ Regla:
 
 **un tag publicado no se mueve.**
 
-No reutilizar:
-
-```text
-v1.1-optimized
-```
-
-para un estado nuevo.
-
-Cuando una futura actualización sea validada:
+Si un nuevo estado pasa todas las validaciones:
 
 ```powershell
 git tag -a v1.2-optimized -m "Optimized Bonsai 2 27B baseline"
 git push origin v1.2-optimized
 ```
 
-Antes de crear el tag comprobar:
+Antes de crear un tag:
 
 ```powershell
 git status -sb
@@ -368,30 +370,29 @@ El working tree debe estar limpio.
 
 ---
 
-## 9. Backups locales
+## 9. Ramas de respaldo
 
-Actualmente existen ramas de respaldo, entre ellas:
+Pueden existir ramas locales como:
 
 ```text
-backup/pre-fork-layout
 backup/pre-10709-optimization
+backup/pre-fork-layout
+backup/pre-main-unification
 ```
 
-No forman parte del flujo normal.
+No son ramas operativas.
 
-Su función es permitir recuperación manual si una operación de Git daña la rama principal de trabajo.
+No hacer trabajo normal sobre ellas.
 
-No eliminarlas mientras siga siendo útil conservar esos puntos de recuperación.
+Su función es servir como puntos de recuperación.
+
+Pueden mantenerse mientras sea útil conservar esos estados históricos.
 
 ---
 
-## 10. Recuperación básica
+## 10. Recuperación
 
-### Si `optimized` queda en un estado incorrecto
-
-Primero no ejecutar comandos destructivos adicionales.
-
-Inspeccionar:
+Antes de cualquier operación destructiva:
 
 ```powershell
 git status
@@ -399,34 +400,30 @@ git log --graph --decorate --oneline --all -20
 git reflog -20
 ```
 
-La rama de respaldo del layout actual apunta al baseline `v1.1-optimized`:
+### Volver al baseline v1.1
 
-```text
-backup/pre-fork-layout
-```
-
-Para comparar:
+Solo si se desea descartar deliberadamente todos los cambios posteriores:
 
 ```powershell
-git diff backup/pre-fork-layout..optimized
-```
-
-### Recuperar exactamente `v1.1-optimized`
-
-Solo cuando se quiera descartar deliberadamente el estado posterior:
-
-```powershell
-git switch optimized
+git switch main
 git reset --hard v1.1-optimized
 ```
 
-No ejecutar este comando si existen cambios locales que deban conservarse.
+No ejecutar este comando si hay trabajo local sin guardar.
+
+### Comparar con un backup
+
+Ejemplo:
+
+```powershell
+git diff backup/pre-main-unification..main
+```
 
 ---
 
 ## 11. Seguridad de remotos
 
-La configuración local deshabilita los pushes al proyecto oficial:
+El push al proyecto oficial está bloqueado localmente:
 
 ```powershell
 git remote set-url --push upstream DISABLED
@@ -438,30 +435,6 @@ Comprobar:
 
 ```powershell
 git remote -v
-```
-
-Debe verse:
-
-```text
-upstream  DISABLED (push)
-```
-
-El remoto preferido para push es:
-
-```text
-origin
-```
-
-Comprobar:
-
-```powershell
-git config --get remote.pushDefault
-```
-
-Salida esperada:
-
-```text
-origin
 ```
 
 El repositorio por defecto de GitHub CLI debe ser:
@@ -478,26 +451,36 @@ gh repo set-default --view
 
 ---
 
-## 12. Pull requests
+## 12. Pull requests hacia PrismML
 
-La rama `optimized` es una distribución/configuración local.
+No abrir un Pull Request de todo `main` hacia PrismML.
 
-No abrir automáticamente un Pull Request de `optimized` hacia PrismML.
+`main` contiene configuración y decisiones específicas de esta instalación.
 
-Si una mejora concreta resulta genérica y útil para upstream:
+Si una mejora concreta puede beneficiar a PrismML:
 
-1. aislarla en un commit o rama separada;
-2. eliminar dependencias específicas del equipo local;
-3. añadir pruebas/documentación;
-4. abrir un PR específico hacia PrismML.
+1. crear una rama temporal desde el upstream apropiado;
+2. aislar únicamente la mejora genérica;
+3. eliminar dependencias específicas de la workstation;
+4. añadir pruebas y documentación;
+5. abrir un PR específico.
 
-No utilizar toda la rama `optimized` como PR upstream.
+Ejemplo conceptual:
+
+```powershell
+git fetch upstream
+git switch -c contribution/<nombre> upstream/main
+```
+
+Después de terminar la contribución, volver a:
+
+```powershell
+git switch main
+```
 
 ---
 
-## 13. Qué archivos describen el baseline local
-
-Archivos principales:
+## 13. Archivos que describen el baseline
 
 ```text
 README-LOCAL.md
@@ -510,27 +493,25 @@ templates/chat_template.jinja
 results/bonsai2-5060ti-context-curve-10709.csv
 ```
 
-Responsabilidades:
-
 ### `README-LOCAL.md`
 
-Resumen operativo de la instalación.
+Resumen operativo.
 
 ### `MODEL-MANIFEST.md`
 
-Estado técnico reproducible del modelo y runtime.
+Estado técnico reproducible.
 
 ### `OPTIMIZATION-RESULTS.md`
 
-Resultados de benchmarks y decisiones de optimización.
+Benchmarks y decisiones.
 
 ### `REPO-OPERATIONS.md`
 
-Procedimiento Git y mantenimiento del fork.
+Operación Git, actualización, recuperación y mantenimiento.
 
 ### `start-bonsai.ps1`
 
-Punto de entrada estable del runtime local.
+Punto de entrada estable del runtime.
 
 ---
 
@@ -539,71 +520,86 @@ Punto de entrada estable del runtime local.
 Antes de modificar:
 
 ```text
-[ ] Estoy en la rama optimized
-[ ] git status está limpio o entiendo los cambios presentes
-[ ] origin apunta al fork personal
-[ ] upstream apunta a PrismML
-[ ] no voy a hacer push a upstream
+[ ] Estoy en main
+[ ] Entiendo el estado de git status
+[ ] origin apunta a Therenovatioai/Bonsai-demo
+[ ] upstream apunta a PrismML-Eng/Bonsai-demo
+[ ] upstream tiene push deshabilitado
 ```
 
-Antes de actualizar PrismML:
+Antes de incorporar PrismML:
 
 ```text
-[ ] fetch upstream
-[ ] main se actualiza con --ff-only
-[ ] main coincide con upstream/main
-[ ] optimized se rebasa sobre main
+[ ] main está limpio
+[ ] ejecuté git fetch upstream
+[ ] revisé HEAD..upstream/main
+[ ] incorporo con git merge upstream/main
 ```
 
-Antes de publicar optimized después de rebase:
+Antes de publicar después de una actualización:
 
 ```text
 [ ] runtime arranca
 [ ] /health devuelve ok
-[ ] contexto sigue en 262144
-[ ] total_slots sigue en 1
+[ ] contexto = 262144
+[ ] total_slots = 1
 [ ] KV Q4 + mean-centering siguen activos
 [ ] MMProj sigue en GPU
 [ ] prompt cache sigue configurado
-[ ] no hay regresiones relevantes
-[ ] push usa --force-with-lease
+[ ] no observé regresiones relevantes
+[ ] documentación sigue siendo correcta
 ```
 
 Antes de crear un nuevo baseline:
 
 ```text
-[ ] documentación actualizada
 [ ] working tree limpio
+[ ] runtime validado
 [ ] benchmarks necesarios completados
+[ ] documentación actualizada
 [ ] commit final creado
-[ ] tag nuevo, nunca reutilizado
+[ ] tag nuevo creado
 [ ] tag publicado en origin
 ```
 
 ---
 
-## 15. Estado actual conocido
+## 15. Estado operativo actual
 
-A fecha del baseline `v1.1-optimized`:
+Repositorio oficial:
 
 ```text
-upstream:
 PrismML-Eng/Bonsai-demo
+```
 
-origin:
+Fork:
+
+```text
 Therenovatioai/Bonsai-demo
+```
 
-rama oficial espejo:
+Rama operativa:
+
+```text
 main
+```
 
-rama de trabajo:
-optimized
+Baseline histórico vigente del runtime:
 
-baseline:
+```text
 v1.1-optimized
+```
 
-baseline commit:
+Commit del baseline:
+
+```text
 74ffb8dcad57125c6165d3e5339bb48c97735f42
 ```
 
-La rama `optimized` debe considerarse la fuente operativa de esta instalación.
+`main` puede contener documentación u otros commits posteriores al tag sin que el tag se mueva.
+
+La fuente operativa de esta instalación es siempre:
+
+```text
+origin/main
+```
