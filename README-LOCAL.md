@@ -16,7 +16,7 @@ Runtime local optimizado de **Bonsai 2 27B** sobre el fork PrismML de llama.cpp.
 - Visión + tools: validado
 - Contexto largo: validado
 - Prompt caching: validado
-- Baseline optimizado: `v1.1-optimized`
+- Baseline optimizado objetivo: `v1.1-optimized`
 
 ## Runtime
 
@@ -98,6 +98,41 @@ kv-calibration-corpus.txt
 results/bonsai2-5060ti-context-curve-10709.csv
 ```
 
+## Operación del repositorio
+
+Este repositorio usa una estructura de fork deliberada para separar el proyecto oficial de PrismML de la versión local optimizada.
+
+```text
+PrismML-Eng/Bonsai-demo
+        ↑
+     upstream
+     fetch solamente
+        │
+        │
+Therenovatioai/Bonsai-demo
+        ↑
+      origin
+       │
+       ├── main       → espejo limpio de PrismML
+       └── optimized  → versión local optimizada
+```
+
+Reglas principales:
+
+- `upstream` apunta al repositorio oficial `PrismML-Eng/Bonsai-demo`.
+- `origin` apunta al fork `Therenovatioai/Bonsai-demo`.
+- `main` se mantiene como espejo limpio de `upstream/main`.
+- `optimized` contiene la configuración, documentación y optimizaciones locales.
+- Los tags `v1.0-stable`, `v1.1-optimized`, etc. son snapshots históricos y no deben moverse.
+- El push hacia `upstream` está deshabilitado localmente para evitar modificaciones accidentales al repositorio oficial.
+- El trabajo normal debe realizarse sobre `optimized`.
+
+La guía completa de operación, actualización, recuperación y versionado está en:
+
+```text
+REPO-OPERATIONS.md
+```
+
 ## Restricciones operativas
 
 - No ejecutar Qwen/KVMem y Bonsai simultáneamente.
@@ -114,4 +149,3 @@ results/bonsai2-5060ti-context-curve-10709.csv
 v1.0-stable      baseline técnico inicial
 v1.1-optimized   runtime optimizado y benchmarkeado
 ```
-
