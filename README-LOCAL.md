@@ -16,7 +16,7 @@ Runtime local optimizado de **Bonsai 2 27B** sobre el fork PrismML de llama.cpp.
 - Visión + tools: validado
 - Contexto largo: validado
 - Prompt caching: validado
-- Baseline optimizado objetivo: `v1.1-optimized`
+- Baseline optimizado: `v1.1-optimized`
 
 ## Runtime
 
@@ -149,3 +149,4 @@ REPO-OPERATIONS.md
 v1.0-stable      baseline técnico inicial
 v1.1-optimized   runtime optimizado y benchmarkeado
 ```
+
